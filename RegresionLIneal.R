@@ -244,3 +244,30 @@ M
 M <- M[complete.cases(M),]
 p_mat <- correl2$P
 corrplot(M, order = "hclust", p.mat= p_mat, sig.level = 0.01, na.label = "NA")
+
+
+#regresion lineal
+set.seed(452)
+
+trainingRow <- sample(1:nrow(total), 0.6*nrow(total))
+trainingData <-total[trainingRow,]
+testing <- total[-trainingRow,]
+
+#hacer modelo lineal
+lmodel <- lm(SalePrice ~ ., data = trainingData)
+
+#prediccion
+predL<-predict(lmodel, newdata = testing)
+
+resultados<-data.frame(testing$SalePrice,predL)
+resultados$variacion<-abs(resultados$testing.SalePrice-resultados$predL)
+
+
+predMSpByPL<-predict(lmodel,newdata = testing)
+resultados1<-data.frame(testing$SalePrice,round(predMSpByPL,0))
+names(resultados1)<-c("real","prediccion")
+
+resultados1$real <- as.factor(resultados1$real)
+resultados1$prediccion <- as.factor(resultados1$prediccion)
+
+confusionMatrix(resultados1$real,resultados1$prediccion)
