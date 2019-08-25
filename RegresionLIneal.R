@@ -235,6 +235,7 @@ total <- within(total, rm("BsmtCond","BsmtExposure", "BsmtFinType1", "BsmtFinTyp
                           "HeatingQC","CentralAir","Electrical","KitchenQual","Functional",
                           "FireplaceQu","GarageType","GarageYrBlt","GarageFinish","GarageQual",
                           "GarageCond","PavedDrive","PoolQC","Fence","MiscFeature","SaleType","SaleCondition"))
+
 #correlacion variables numericas
 t <- sapply(total,as.numeric)
 correl2 <- rcorr(as.matrix(t))
@@ -252,22 +253,45 @@ set.seed(452)
 trainingRow <- sample(1:nrow(total), 0.6*nrow(total))
 trainingData <-total[trainingRow,]
 testing <- total[-trainingRow,]
-
+trainingData <- trainingData[complete.cases(trainingData),]
+testing <- testing[complete.cases(testing),]
+trainingData <- within(trainingData, rm("TotalBsmtSF","GrLivArea"))
+testing <- within(testing,rm("TotalBsmtSF","GrLivArea"))
 #hacer modelo lineal
 lmodel <- lm(SalePrice ~ ., data = trainingData)
-
+summary(lmodel)
+sigma(lmodel)/mean(trainingData$SalePrice)
 #prediccion
-predL<-predict(lmodel, newdata = testing)
+predL<-predict(lmodel, newdata = testing, interval = "confidence", level = .95)
+predL
 
 resultados<-data.frame(testing$SalePrice,predL)
-resultados$variacion<-abs(resultados$testing.SalePrice-resultados$predL)
+dif<-abs(resultados$testing.SalePrice-resultados$predL)
+dif
+summary(dif)
+
+#categorizar
+total$rangos <- "1"
+total[which(total$SalePrice>=100000 & total$SalePrice<300000), 'rangos'] <- "2"
+total[which(total$SalePrice>=300000 & total$SalePrice <= 755000), 'rangos'] <- "3"
+set.seed(100)
+
+trainingRow <- sample(1:nrow(total), 0.6*nrow(total))
+trainingData <-total[trainingRow,]
+testing <- total[-trainingRow,]
+trainingData <- trainingData[complete.cases(trainingData),]
+testing <- testing[complete.cases(testing),]
+trainingData <- within(trainingData, rm("TotalBsmtSF","GrLivArea"))
+testing <- within(testing,rm("TotalBsmtSF","GrLivArea"))
 
 
-predMSpByPL<-predict(lmodel,newdata = testing)
-resultados1<-data.frame(testing$SalePrice,round(predMSpByPL,0))
-names(resultados1)<-c("real","prediccion")
+#KNN
+trainingData$rangos <- as.numeric(trainingData$rangos)
+testing$rangos <- as.numeric(testing$rangos)
 
-resultados1$real <- as.factor(resultados1$real)
-resultados1$prediccion <- as.factor(resultados1$prediccion)
+library(class)
+predKnn<-knn(trainingData,testing,trainingData$rangos,k=3)
+predKnn
+cfm<-confusionMatrix(as.factor(testing$rangos),predKnn)
+cfm
 
-confusionMatrix(resultados1$real,resultados1$prediccion)
