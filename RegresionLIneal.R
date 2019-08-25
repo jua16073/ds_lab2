@@ -281,8 +281,8 @@ trainingData <-total[trainingRow,]
 testing <- total[-trainingRow,]
 trainingData <- trainingData[complete.cases(trainingData),]
 testing <- testing[complete.cases(testing),]
-trainingData <- within(trainingData, rm("TotalBsmtSF","GrLivArea"))
-testing <- within(testing,rm("TotalBsmtSF","GrLivArea"))
+trainingData <- within(trainingData, rm("TotalBsmtSF","GrLivArea","SalePrice"))
+testing <- within(testing,rm("TotalBsmtSF","GrLivArea","SalePrice"))
 
 
 #KNN
